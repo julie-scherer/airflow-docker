@@ -1,0 +1,10 @@
+_*
+.DS_Store
+
+.env
+venv
+
+dags/
+logs/
+plugins/
+scripts/
