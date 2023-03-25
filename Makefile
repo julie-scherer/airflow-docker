@@ -1,4 +1,4 @@
-PROJECT_NAME=dockerairflow
+PROJECT_NAME=airflow-docker
 include .env
 
 .PHONY: start
