@@ -8,3 +8,7 @@ dags/
 logs/
 plugins/
 scripts/
+
+airflow.cfg
+webserver_config.py
+airflow.db
