@@ -1,6 +1,6 @@
-ARG AIRFLOW_IMAGE_VERSION=${AIRFLOW_IMAGE_VERSION:-latest}
+ARG AIRFLOW_VERSION=${AIRFLOW_VERSION:-2.5.2}
 
-FROM apache/airflow:$AIRFLOW_IMAGE_VERSION
+FROM apache/airflow:$AIRFLOW_VERSION
 
 ENV AIRFLOW_USER=${AIRFLOW_USER:-airflow}
 ENV AIRFLOW_PASSWORD=${AIRFLOW_PASSWORD:-airflow}
@@ -11,4 +11,4 @@ USER airflow
 WORKDIR ${AIRFLOW_USER_HOME}
 
 # RUN pip install --upgrade pip \
-#     && pip install --no-cache-dir apache-airflow[]
+#     && pip install --no-cache-dir <package_you_want_to_install>

@@ -4,7 +4,7 @@ x-airflow-common:
     context: .
     dockerfile: Dockerfile
     args:
-      - AIRFLOW_IMAGE_VERSION=${AIRFLOW_IMAGE_VERSION:-latest}
+      - AIRFLOW_VERSION=${AIRFLOW_VERSION:-latest}
       - AIRFLOW_USER=${AIRFLOW_USER:-airflow}
       - AIRFLOW_PASSWORD=${AIRFLOW_PASSWORD:-airflow}
       - AIRFLOW_HOME=${AIRFLOW_HOME:-/opt/airflow}
@@ -12,14 +12,12 @@ x-airflow-common:
   env_file:
     - .env
   volumes:
-    - ./dags:${AIRFLOW_HOME:-/opt/airflow}/dags
-    - ./logs:${AIRFLOW_HOME:-/opt/airflow}/logs
-    - ./plugins:${AIRFLOW_HOME:-/opt/airflow}/plugins
+    - ${AIRFLOW_PROJ_DIR:-.}/dags:${AIRFLOW_HOME:-/opt/airflow}/dags
+    - ${AIRFLOW_PROJ_DIR:-.}/logs:${AIRFLOW_HOME:-/opt/airflow}/logs
+    - ${AIRFLOW_PROJ_DIR:-.}/plugins:${AIRFLOW_HOME:-/opt/airflow}/plugins
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
-    redis:
-      condition: service_healthy
     postgres:
       condition: service_healthy
 
@@ -40,26 +38,12 @@ services:
       interval: 5s
       retries: 5
 
-  redis:
-    image: redis:latest
-    expose:
-      - 6379
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 30s
-      retries: 50
-    restart: always
-
   webserver:
     <<: *airflow-common
     command: webserver
     restart: always
     env_file:
       - .env
-    volumes:
-      - ./airflow.cfg:${AIRFLOW_HOME:-/opt/airflow}/airflow.cfg
-      - ./webserver_config.py:${AIRFLOW_HOME:-/opt/airflow}/webserver_config.py
     ports:
       - 8080:8080
     healthcheck:
@@ -78,9 +62,6 @@ services:
     restart: always
     env_file:
       - .env
-    volumes:
-      - ./airflow.cfg:${AIRFLOW_HOME:-/opt/airflow}/airflow.cfg
-      - ./webserver_config.py:${AIRFLOW_HOME:-/opt/airflow}/webserver_config.py
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
       interval: 10s
@@ -96,30 +77,25 @@ services:
     env_file:
       - .env
     volumes:
-      - ./:${AIRFLOW_HOME:-/opt/airflow}
+      - ${AIRFLOW_PROJ_DIR:-.}/.env:${AIRFLOW_HOME:-/opt/airflow}/.env
+      - ${AIRFLOW_PROJ_DIR:-.}:/sources
     entrypoint: /bin/bash
     command: 
       - -c
       - |
-        mkdir -p ./dags ./plugins ./logs
+        mkdir -p ${AIRFLOW_PROJ_DIR:-.}/dags ${AIRFLOW_PROJ_DIR:-.}/plugins ${AIRFLOW_PROJ_DIR:-.}/logs
         if ! grep '^AIRFLOW_UID=[0-9]' .env ; then 
           echo -e "AIRFLOW_UID=$$(id -u)\n" >> .env
         fi
-        chmod 777 -R logs
         airflow db init
         airflow db upgrade
         airflow users create \
-            -r $ROLE \
-            -u $USER \
-            -p $PASSWORD \
-            -f $FIRST \
-            -l $LAST \
-            -e $EMAIL
-    environment:
-      _AIRFLOW_DB_UPGRADE: 'true'
-      _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
-      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+            --role $ROLE \
+            --username $USER \
+            --password $PASSWORD \
+            --firstname $FIRST \
+            --lastname $LAST \
+            --email $EMAIL
     depends_on:
       <<: *airflow-common-depends-on
 
