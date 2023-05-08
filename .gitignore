@@ -4,7 +4,6 @@ _*
 .env
 venv
 
-dags/
 logs/
 plugins/
 

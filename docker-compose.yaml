@@ -96,6 +96,8 @@ services:
             --firstname $FIRST \
             --lastname $LAST \
             --email $EMAIL
+        airflow connections add 'slack_connection' \
+          --conn-uri 'postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}'
     depends_on:
       <<: *airflow-common-depends-on
 
